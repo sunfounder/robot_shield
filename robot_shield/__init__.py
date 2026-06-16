@@ -12,10 +12,31 @@ Provides hardware abstraction for the SunFounder Robot Shield:
 
 Usage::
 
-    from robot_shield import Servo, PWM, Motor
+    from robot_shield import Servo, PWM, Motor, Battery, UserButton, I2C, setup_audio_output
 
+    # Servo — angle control with offset calibration
     servo = Servo(0)
     servo.angle(45)
+
+    # PWM — raw frequency/pulse control
+    pwm = PWM(3)
+    pwm.freq(50)
+    pwm.pulse_width(1500)
+
+    # Motor — DC motor control via dual-PWM H-bridge
+    motor = Motor("M0")
+    motor.power(50)
+
+    # Battery — voltage, capacity, status via I2C
+    battery = Battery()
+    print(battery.voltage, battery.capacity, battery.status)
+
+    # UserButton — USR button with press/release/long-press callbacks
+    btn = UserButton()
+    btn.set_on_click(lambda: print("clicked"))
+
+    # Audio — configure Qualcomm Codec ALSA mixer
+    setup_audio_output()
 """
 
 from ._version import __version__
