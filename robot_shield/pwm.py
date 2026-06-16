@@ -7,7 +7,12 @@ from arduino.app_utils import Bridge
 
 
 class PWM:
-    """Single PWM channel control via Bridge → sketch pwm_control."""
+    """Single PWM channel control via Bridge → sketch pwm_control.
+
+    Args:
+        channel: PWM channel number (0–11). Channels 0–1 are mapped to
+                 PAN/TILT servos; channels 4–11 to motor phases.
+    """
 
     MIN_PW = 500
     MAX_PW = 2500
@@ -22,10 +27,10 @@ class PWM:
         """Get or set PWM frequency in Hz.
 
         Args:
-            freq: frequency in Hz. Leave None to read back current value.
+            freq: Frequency in Hz. Leave ``None`` to read back current value.
 
         Returns:
-            Current frequency (int).
+            int: Current frequency in Hz.
         """
         if freq is None:
             return self._freq
@@ -37,11 +42,11 @@ class PWM:
         """Get or set pulse width in microseconds.
 
         Args:
-            pulse_width: pulse width in us (500–2500 for servos).
-                         Leave None to read back current value from sketch.
+            pulse_width: Pulse width in μs (0–65535, 500–2500 for servos).
+                         Leave ``None`` to read back current value from sketch.
 
         Returns:
-            Current pulse width (int).
+            int: Current pulse width in μs.
         """
         if pulse_width is None:
             return Bridge.call("pwm_get_pulse", str(self._ch))
@@ -53,12 +58,14 @@ class PWM:
     def pulse_width_percent(self, percent: float = None):
         """Get or set pulse width as a percentage of the period.
 
+        Converts between percent and pulse width using the current frequency.
+
         Args:
-            percent: duty cycle percentage (0.0–100.0).
-                     Leave None to read back current value.
+            percent: Duty cycle percentage (0.0–100.0).
+                     Leave ``None`` to read back current value.
 
         Returns:
-            Current duty cycle as a percentage (float).
+            float: Current duty cycle as a percentage (0.0–100.0).
         """
         period_us = 1_000_000 / self._freq
         if percent is None:
@@ -70,11 +77,11 @@ class PWM:
         """Get or set channel enable state.
 
         Args:
-            value: True to enable, False to disable.
-                   Leave None to read back current state.
+            value: ``True`` to enable PWM output, ``False`` to disable.
+                   Leave ``None`` to read back current state.
 
         Returns:
-            True if enabled, False otherwise.
+            bool: ``True`` if channel is enabled, ``False`` otherwise.
         """
         if value is None:
             return self._enabled

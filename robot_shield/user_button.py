@@ -62,21 +62,37 @@ class UserButton:
     # ------------------------------------------------------------------
 
     def set_on_click(self, callback: Callable[[], None]) -> None:
-        """Set callback for when the button is pressed and released (full click)."""
+        """Set callback for when the button is pressed and released (full click).
+
+        Fires only for quick press-release cycles (shorter than the long-press
+        threshold). Does not fire after a long press.
+
+        Args:
+            callback: Function to call on click, takes no arguments.
+        """
         self._on_click = callback
 
     def set_on_press(self, callback: Callable[[], None]) -> None:
-        """Set callback for when the button is pressed down."""
+        """Set callback for when the button is pressed down.
+
+        Args:
+            callback: Function to call on press, takes no arguments.
+        """
         self._on_press = callback
 
     def set_on_release(self, callback: Callable[[], None]) -> None:
-        """Set callback for when the button is released."""
+        """Set callback for when the button is released.
+
+        Args:
+            callback: Function to call on release, takes no arguments.
+        """
         self._on_release = callback
 
     def set_on_press_released(self, callback: Callable[[bool], None]) -> None:
         """Set callback for press/release state changes.
 
-        Called with ``True`` on press, ``False`` on release.
+        Args:
+            callback: Function called with ``True`` on press, ``False`` on release.
         """
         self._on_press_released = callback
 
@@ -105,15 +121,30 @@ class UserButton:
     # ------------------------------------------------------------------
 
     def get_state(self) -> bool:
-        """Return True if the button is currently pressed."""
+        """Return the current button state.
+
+        Returns:
+            bool: ``True`` if the button is currently pressed.
+        """
         return self.pressed
 
     def is_pressed(self) -> bool:
-        """Return True if the button is currently pressed."""
+        """Return whether the button is currently pressed.
+
+        Returns:
+            bool: ``True`` if the button is currently pressed.
+        """
         return self.pressed
 
     def get_pressed_for(self) -> float:
-        """Return how long the button has been (or was) pressed, in seconds."""
+        """Return how long the button has been (or was) pressed, in seconds.
+
+        Returns the elapsed time since the current press started, or the
+        duration of the most recent press if the button is now released.
+
+        Returns:
+            float: Press/release duration in seconds.
+        """
         if self.pressed:
             return time.time() - self.pressed_at
         return self.pressed_for
@@ -123,7 +154,11 @@ class UserButton:
     # ------------------------------------------------------------------
 
     def start(self) -> None:
-        """Deprecated — polling starts automatically in __init__."""
+        """Deprecated — polling starts automatically in ``__init__``.
+
+        Raises:
+            DeprecationWarning: Always, since polling is auto-started.
+        """
         warnings.warn(
             "UserButton.start() is deprecated. Polling starts automatically in __init__.",
             DeprecationWarning,
@@ -131,7 +166,10 @@ class UserButton:
         )
 
     def stop(self) -> None:
-        """Stop the background polling thread and release resources."""
+        """Stop the background polling thread and release resources.
+
+        Blocks up to 1 second waiting for the poll thread to exit.
+        """
         self._running = False
         if self._thread is not None:
             self._thread.join(timeout=1.0)
@@ -142,14 +180,16 @@ class UserButton:
     # ------------------------------------------------------------------
 
     def _start_polling(self) -> None:
-        """Launch the background polling thread."""
+        """Launch the background polling thread as a daemon."""
         self._running = True
         self._thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._thread.start()
 
     def _poll_loop(self) -> None:
-        """Poll REG_USR_KEY_SIGNAL for press/release events."""
-        # Capture initial state so we don't fire on stale register values
+        """Poll REG_USR_KEY_SIGNAL at ``DEFAULT_POLL_INTERVAL`` for press/release events.
+
+        Captures the initial register value to avoid firing on stale data at startup.
+        """
         prev = self._read_reg()
         while self._running:
             try:
@@ -162,33 +202,44 @@ class UserButton:
             time.sleep(DEFAULT_POLL_INTERVAL)
 
     def _handle_signal(self, signal: int) -> None:
-        """Process a register value change."""
+        """Process a register value change.
+
+        Args:
+            signal: Register value (``0x01`` = press, ``0x02`` = release).
+                    Release is guarded against stale ``0x02`` at startup.
+        """
         if signal == USR_KEY_PTT_START:
             self._on_press_event()
         elif signal == USR_KEY_PTT_STOP and self.pressed:
-            # Guard against stale 0x02 at startup: only accept release if
-            # we previously saw a press (pressed == True).
             self._on_release_event()
 
     def _on_press_event(self) -> None:
-        """Handle button press."""
+        """Record press time, invoke press callbacks, start long-press timer.
+
+        Increments ``_press_generation`` to invalidate any stale long-press
+        timers from prior presses.
+        """
         self.pressed = True
         self.pressed_at = time.time()
         self._long_press_triggered = False
-        self._press_generation += 1  # invalidate any stale long-press timers
+        self._press_generation += 1
 
         self._safe_call(self._on_press)
         self._safe_call(self._on_press_released, True)
 
         if self._on_long_press is not None or self._on_long_press_released is not None:
             dur = self._long_press_duration
-            gen = self._press_generation  # capture the generation this timer belongs to
+            gen = self._press_generation
             threading.Thread(
                 target=self._long_press_timer, args=(dur, gen), daemon=True
             ).start()
 
     def _on_release_event(self) -> None:
-        """Handle button release."""
+        """Record release, invoke release/click/long-press-released callbacks.
+
+        Fires ``_on_click`` for short presses, ``_on_long_press_released``
+        if the long-press threshold was reached.
+        """
         self.pressed = False
         self.pressed_for = time.time() - self.pressed_at
 
@@ -206,8 +257,11 @@ class UserButton:
     def _long_press_timer(self, duration: float, generation: int) -> None:
         """Sleep for *duration*, then fire long-press callback if still pressed.
 
-        *generation* prevents a stale timer (from a previous press) from
-        firing during a subsequent rapid press.
+        Args:
+            duration: Hold time threshold in seconds.
+            generation: Press generation counter. If it no longer matches
+                        ``self._press_generation``, this timer is stale
+                        (from a prior press) and is silently discarded.
         """
         time.sleep(duration)
         if self.pressed and not self._long_press_triggered and self._press_generation == generation:
@@ -215,7 +269,11 @@ class UserButton:
             self._safe_call(self._on_long_press)
 
     def _read_reg(self):
-        """Read REG_USR_KEY_SIGNAL via Arduino Bridge."""
+        """Read REG_USR_KEY_SIGNAL via Arduino Bridge.
+
+        Returns:
+            int or None: Register value, or ``None`` if the Bridge call fails.
+        """
         try:
             return Bridge.call("read_reg", str(REG_USR_KEY_SIGNAL))
         except Exception:
@@ -223,7 +281,12 @@ class UserButton:
 
     @staticmethod
     def _safe_call(callback, *args) -> None:
-        """Invoke a callback, swallowing any exceptions."""
+        """Invoke a callback, swallowing any exceptions silently.
+
+        Args:
+            callback: The callable to invoke, or ``None`` (no-op).
+            *args: Positional arguments forwarded to *callback*.
+        """
         if callback is None:
             return
         try:
