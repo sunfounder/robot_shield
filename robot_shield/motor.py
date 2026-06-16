@@ -88,9 +88,16 @@ class Motor:
 
         Args:
             is_reverse: ``True`` to invert direction, ``False`` for normal.
+
+        Returns:
+            None
         """
         self._is_reversed = is_reverse
 
     def stop(self):
-        """Stop the motor (brake — both channels low)."""
+        """Stop the motor (brake — both channels low).
+
+        Returns:
+            None
+        """
         self.power(0)

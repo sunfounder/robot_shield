@@ -38,6 +38,11 @@ class UserButton:
     """
 
     def __init__(self) -> None:
+        """Initialize the button and start background polling.
+
+        Sets up callback slots and launches a daemon poll thread that reads
+        ``REG_USR_KEY_SIGNAL`` at 100 ms intervals.
+        """
         self.pressed = False
         self.pressed_for = 0.0
         self.pressed_at = 0.0
@@ -169,6 +174,9 @@ class UserButton:
         """Stop the background polling thread and release resources.
 
         Blocks up to 1 second waiting for the poll thread to exit.
+
+        Returns:
+            None
         """
         self._running = False
         if self._thread is not None:
@@ -180,7 +188,11 @@ class UserButton:
     # ------------------------------------------------------------------
 
     def _start_polling(self) -> None:
-        """Launch the background polling thread as a daemon."""
+        """Launch the background polling thread as a daemon.
+
+        Returns:
+            None
+        """
         self._running = True
         self._thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._thread.start()
@@ -189,6 +201,9 @@ class UserButton:
         """Poll REG_USR_KEY_SIGNAL at ``DEFAULT_POLL_INTERVAL`` for press/release events.
 
         Captures the initial register value to avoid firing on stale data at startup.
+
+        Returns:
+            None
         """
         prev = self._read_reg()
         while self._running:
@@ -218,6 +233,9 @@ class UserButton:
 
         Increments ``_press_generation`` to invalidate any stale long-press
         timers from prior presses.
+
+        Returns:
+            None
         """
         self.pressed = True
         self.pressed_at = time.time()
@@ -239,6 +257,9 @@ class UserButton:
 
         Fires ``_on_click`` for short presses, ``_on_long_press_released``
         if the long-press threshold was reached.
+
+        Returns:
+            None
         """
         self.pressed = False
         self.pressed_for = time.time() - self.pressed_at

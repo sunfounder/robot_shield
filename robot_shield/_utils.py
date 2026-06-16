@@ -1,3 +1,5 @@
+"""Internal utilities — retry decorator, math helpers, lazy caching, command runner.""
+
 import time
 import subprocess
 from typing import Callable, Any

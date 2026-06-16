@@ -204,7 +204,11 @@ class I2C:
             return False
 
     def is_available(self):
-        """Alias for :meth:`is_ready`."""
+        """Alias for :meth:`is_ready`.
+
+        Returns:
+            bool: ``True`` if device responds.
+        """
         return self.is_ready()
 
     @staticmethod
