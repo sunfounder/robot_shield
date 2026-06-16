@@ -31,6 +31,6 @@ dev = ["pytest>=7"]
 [project.urls]
 Repository = "https://github.com/sunfounder/uno-q-ai-robot-plus"
 
-[tool.setuptools]
-packages = ["robot_shield"]
-package-dir = {"robot_shield" = "."}
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["robot_shield*"]
