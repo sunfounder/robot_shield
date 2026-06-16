@@ -2,6 +2,8 @@
 
 Hardware control library for the SunFounder Robot Shield — servo, PWM, motor, battery, audio, and button control via I2C registers through Arduino Bridge RPC.
 
+> **Arduino firmware**: The matching Arduino firmware repo → [sunfounder/robot_shield_bridge](https://github.com/sunfounder/robot_shield_bridge)
+
 ## Modules
 
 | Class / Function | Purpose |
