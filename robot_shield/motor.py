@@ -46,6 +46,15 @@ class Motor:
     }
 
     def __init__(self, motor: str = None, **kwargs):
+        """Initialize a DC motor instance.
+
+        Args:
+            motor: Motor identifier, one of ``"M0"``, ``"M1"``, ``"M2"``, ``"M3"``.
+            is_reversed: If ``True``, inverts the direction (optional keyword).
+
+        Raises:
+            ValueError: If *motor* is not one of the valid identifiers.
+        """
         if motor not in self.MOTOR_PINS:
             raise ValueError(
                 f"motor must be one of {list(self.MOTOR_PINS.keys())}")
@@ -75,7 +84,11 @@ class Motor:
         return self._power
 
     def set_is_reverse(self, is_reverse: bool):
-        """Set whether the motor direction is reversed."""
+        """Set whether the motor direction is reversed.
+
+        Args:
+            is_reverse: ``True`` to invert direction, ``False`` for normal.
+        """
         self._is_reversed = is_reverse
 
     def stop(self):

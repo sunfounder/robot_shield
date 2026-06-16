@@ -52,10 +52,10 @@ class Servo:
         """Get or set the calibration offset.
 
         Args:
-            offset: offset in degrees, clipped to ±20. Leave None to read.
+            offset: Offset in degrees, clipped to ±20. Leave ``None`` to read.
 
         Returns:
-            Current offset value.
+            float: Current offset value in degrees.
         """
         if offset is None:
             return self._offset
@@ -66,11 +66,12 @@ class Servo:
         """Get or set the servo angle via Bridge → sketch servo_control.
 
         Args:
-            angle: desired angle (clamped to [*min*, *max*]).
-                   Leave None to read current angle from sketch.
+            angle: Desired angle in degrees (clamped to [*min*, *max*]).
+                   Offset is added before sending to hardware.
+                   Leave ``None`` to read current angle from sketch.
 
         Returns:
-            Current angle.
+            float: Current angle in degrees.
         """
         if angle is None:
             return Bridge.call("servo_get_angle", str(self._ch))
