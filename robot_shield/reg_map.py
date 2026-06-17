@@ -1,15 +1,20 @@
-"""Register address map for the UNO Robot I2C slave (mirrors sketch/reg_map.h).
+"""Register address map and signal values for the UNO Robot I2C slave.
 
-**Register addresses only** — this module defines *where* each register lives.
-Signal values, status codes, and default settings belong in their respective
-domain modules (e.g. ``pwm.py``, ``battery.py``).
+Mirrors ``sketch/reg_map.h``.
 
-Usage::
+Addresses::
 
     >>> from robot_shield.reg_map import (
     ...     REG_BAT_VOLT, REG_BAT_PERCENT, REG_BAT_STATUS,
     ... )
     >>> bat_volt = i2c.read_byte_data(REG_BAT_VOLT)
+
+Signal values::
+
+    >>> from robot_shield.reg_map import (
+    ...     SHUTDOWN_TRIGGER_VAL, KEY_SIGNAL_PRESSED,
+    ... )
+    >>> i2c.write_byte_data(REG_SHUTDOWN_SIGNAL, SHUTDOWN_TRIGGER_VAL)
 """
 
 # ===========================================================================
@@ -49,4 +54,16 @@ REG_RAW_CUR_ADC_L    = 0x27   # Raw current ADC — low byte
 REG_RAW_CUR_ADC_H    = 0x28   # Raw current ADC — high byte
 REG_RAW_IOREF_ADC_L  = 0x29   # Raw IOREF ADC — low byte
 REG_RAW_IOREF_ADC_H  = 0x2A   # Raw IOREF ADC — high byte
+
+# ===========================================================================
+#  Signal values (mirrors sketch/reg_map.h)
+# ===========================================================================
+
+# REG_SHUTDOWN_SIGNAL (0x0A)
+SHUTDOWN_TRIGGER_VAL  = 0x01   # Write to trigger PWR long-press shutdown
+
+# REG_KEY_SIGNAL (0x0B) — PWR button events
+KEY_SIGNAL_PRESSED    = 0x01   # Single click
+KEY_SIGNAL_ZERO_ENTER = 0x02   # Double click — enter zero mode
+KEY_SIGNAL_ZERO_EXIT  = 0x03   # Double click — exit zero mode
 
