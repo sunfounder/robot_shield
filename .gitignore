@@ -28,8 +28,7 @@ venv/
 .claude/
 
 # Secrets - never commit
-.env
-.env.*
+.env*
 *.secret
 secrets.*
 credentials.*
@@ -45,5 +44,4 @@ credentials.*
 Thumbs.db
 
 # Obsidian
-.obsidian/workspace.json
-.trash/
+.obsidian/
