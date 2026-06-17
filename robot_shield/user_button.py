@@ -19,7 +19,7 @@ import threading
 import warnings
 from typing import Callable, Optional
 
-from arduino.app_utils import Bridge
+from .i2c import I2C
 from .reg_map import REG_USR_KEY_SIGNAL
 
 USR_KEY_PTT_START = 0x01
@@ -289,14 +289,23 @@ class UserButton:
             self._long_press_triggered = True
             self._safe_call(self._on_long_press)
 
+    _i2c: I2C | None = None
+
+    @classmethod
+    def _get_i2c(cls) -> I2C:
+        """Get or create the shared I2C instance."""
+        if cls._i2c is None:
+            cls._i2c = I2C()
+        return cls._i2c
+
     def _read_reg(self):
-        """Read REG_USR_KEY_SIGNAL via Arduino Bridge.
+        """Read REG_USR_KEY_SIGNAL via I2C.
 
         Returns:
-            int or None: Register value, or ``None`` if the Bridge call fails.
+            int or None: Register value, or ``None`` if the read fails.
         """
         try:
-            return Bridge.call("read_reg", str(REG_USR_KEY_SIGNAL))
+            return self._get_i2c().read_byte_data(REG_USR_KEY_SIGNAL)
         except Exception:
             return None
 

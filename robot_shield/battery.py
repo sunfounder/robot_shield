@@ -17,8 +17,9 @@ Example::
 """
 
 import logging
+from typing import ClassVar, Optional
 
-from arduino.app_utils import Bridge
+from .i2c import I2C
 from .reg_map import REG_BAT_VOLT, REG_BAT_PERCENT, REG_BAT_STATUS
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,15 @@ MANUFACTURER = "SunFounder"
 class Battery:
     """Battery status reader via I2C registers over Arduino Bridge."""
 
+    _i2c: ClassVar[Optional[I2C]] = None
+
+    @classmethod
+    def _get_i2c(cls) -> I2C:
+        """Get or create the shared I2C instance."""
+        if cls._i2c is None:
+            cls._i2c = I2C()
+        return cls._i2c
+
     @property
     def present(self) -> bool:
         """Check if battery is present (voltage > 0).
@@ -51,13 +61,9 @@ class Battery:
         """Check if battery is online — True when I2C is reachable.
 
         Returns:
-            bool: ``True`` if the I2C register can be read successfully.
+            bool: ``True`` if the I2C device responds.
         """
-        try:
-            Bridge.call("read_reg", str(REG_BAT_VOLT))
-            return True
-        except Exception:
-            return False
+        return self._get_i2c().is_ready()
 
     @property
     def status(self) -> str:
@@ -130,7 +136,7 @@ class Battery:
         return self.raw_status == 0
 
     def _read_reg(self, addr: int) -> int:
-        """Read a single register via Bridge, returning 0 on failure.
+        """Read a single register via I2C, returning 0 on failure.
 
         Args:
             addr: Register address to read.
@@ -139,7 +145,7 @@ class Battery:
             int: Register value, or 0 if the read fails.
         """
         try:
-            return Bridge.call("read_reg", str(addr))
+            return self._get_i2c().read_byte_data(addr)
         except Exception as e:
             logger.error("read_reg(0x%02X) failed: %s", addr, e)
             return 0
