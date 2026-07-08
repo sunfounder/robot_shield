@@ -1,4 +1,4 @@
-"""Internal utilities — retry decorator, math helpers, lazy caching, command runner.""
+"""Internal utilities — retry decorator, math helpers, lazy caching, command runner."""
 
 import time
 import subprocess
@@ -6,7 +6,7 @@ from typing import Callable, Any
 
 
 def retry(times: int = 5, delay: float = 0.1):
-    """Retry decorator — retry up to *times* with *delay* seconds between attempts.
+    """Retry decorator -- retry up to *times* with *delay* seconds between attempts.
 
     Args:
         times: Maximum number of attempts before giving up.
