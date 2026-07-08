@@ -1,4 +1,4 @@
-"""Internal utilities — retry decorator, math helpers, lazy caching, command runner."""
+"""Internal utilities -- retry decorator, math helpers, lazy caching, command runner."""
 
 import time
 import subprocess
@@ -43,7 +43,7 @@ def run_command(cmd: str, timeout: float | None = None) -> tuple:
                  ``(124, "timed out after Ns")``. ``None`` for no timeout.
 
     Returns:
-        tuple: ``(returncode: int, stdout: str)`` — exit code and decoded stdout.
+        tuple: ``(returncode: int, stdout: str)`` -- exit code and decoded stdout.
                On timeout: ``(124, "timed out after Ns")``.
     """
     if timeout is not None:
