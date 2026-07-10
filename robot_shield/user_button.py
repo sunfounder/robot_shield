@@ -25,7 +25,8 @@ from .reg_map import REG_USR_KEY_SIGNAL
 USR_KEY_PTT_START = 0x01
 USR_KEY_PTT_STOP = 0x02
 
-DEFAULT_POLL_INTERVAL = 0.1
+DEFAULT_POLL_INTERVAL = 0.05
+DEBOUNCE_MS = 50
 DEFAULT_LONG_PRESS_DURATION = 2.0
 
 
@@ -58,6 +59,7 @@ class UserButton:
         self._long_press_triggered = False
         self._press_generation = 0
         self._running = False
+        self._last_change = 0.0
         self._thread: Optional[threading.Thread] = None
 
         self._start_polling()
@@ -209,8 +211,10 @@ class UserButton:
         while self._running:
             try:
                 signal = self._read_reg()
-                if signal is not None and signal != prev:
+                now = time.time()
+                if signal is not None and signal != prev and (now - self._last_change) * 1000 > DEBOUNCE_MS:
                     prev = signal
+                    self._last_change = now
                     self._handle_signal(signal)
             except Exception:
                 pass
@@ -225,18 +229,12 @@ class UserButton:
         """
         if signal == USR_KEY_PTT_START:
             self._on_press_event()
-        elif signal == USR_KEY_PTT_STOP and self.pressed:
-            self._on_release_event()
+        elif signal == USR_KEY_PTT_STOP:
+            if self.pressed:
+                self._on_release_event()
 
     def _on_press_event(self) -> None:
-        """Record press time, invoke press callbacks, start long-press timer.
-
-        Increments ``_press_generation`` to invalidate any stale long-press
-        timers from prior presses.
-
-        Returns:
-            None
-        """
+        """Record press time, invoke press callbacks, start long-press timer."""
         self.pressed = True
         self.pressed_at = time.time()
         self._long_press_triggered = False
@@ -253,14 +251,7 @@ class UserButton:
             ).start()
 
     def _on_release_event(self) -> None:
-        """Record release, invoke release/click/long-press-released callbacks.
-
-        Fires ``_on_click`` for short presses, ``_on_long_press_released``
-        if the long-press threshold was reached.
-
-        Returns:
-            None
-        """
+        """Record release, invoke release/click/long-press-released callbacks."""
         self.pressed = False
         self.pressed_for = time.time() - self.pressed_at
 
