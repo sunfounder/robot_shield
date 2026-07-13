@@ -9,37 +9,43 @@ import time
 
 from robot_shield import Motor
 
-m0 = Motor("M0", is_reversed=True)
-m1 = Motor("M1", is_reversed=True)
-m2 = Motor("M2", is_reversed=False)
-m3 = Motor("M3", is_reversed=False)
 
-try:
-    for _ in range(3):
-        print("Forward")
-        m0.power(-50)
-        m1.power(-50)
-        m2.power(-50)
-        m3.power(-50)
-        time.sleep(1)
+def main():
+    m0 = Motor("M0", is_reversed=True)
+    m1 = Motor("M1", is_reversed=True)
+    m2 = Motor("M2", is_reversed=False)
+    m3 = Motor("M3", is_reversed=False)
 
-        print("Backward")
-        m0.power(50)
-        m1.power(50)
-        m2.power(50)
-        m3.power(50)
-        time.sleep(1)
+    try:
+        for _ in range(3):
+            print("Forward")
+            m0.power(-50)
+            m1.power(-50)
+            m2.power(-50)
+            m3.power(-50)
+            time.sleep(1)
 
-        print("Stop")
+            print("Backward")
+            m0.power(50)
+            m1.power(50)
+            m2.power(50)
+            m3.power(50)
+            time.sleep(1)
+
+            print("Stop")
+            m0.stop()
+            m1.stop()
+            m2.stop()
+            m3.stop()
+            time.sleep(1)
+
+    finally:
         m0.stop()
         m1.stop()
         m2.stop()
         m3.stop()
-        time.sleep(1)
+        time.sleep(0.1)
 
-finally:
-    m0.stop()
-    m1.stop()
-    m2.stop()
-    m3.stop()
-    time.sleep(0.1)
+
+if __name__ == "__main__":
+    main()
