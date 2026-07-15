@@ -1,8 +1,8 @@
 """User button via I2C register polling (Arduino Bridge).
 
 The USR button is read from the co-processor at I2C address 0x20 via
-register ``REG_USR_KEY_SIGNAL`` (0x0C). Values are event-based:
-0x01 = pressed, 0x02 = released.
+register ``REG_USR_KEY_SIGNAL`` (0x0C). Values are level-based:
+0x01 = pressed, 0x00 = released.
 
 Example::
 
@@ -24,6 +24,7 @@ from .reg_map import REG_USR_KEY_SIGNAL
 
 USR_KEY_PTT_START = 0x01
 USR_KEY_PTT_STOP = 0x02
+USR_KEY_RELEASE_STATES = (0x00, 0x02)  # firmware may use 0x00 or 0x02 for release
 
 DEFAULT_POLL_INTERVAL = 0.05
 DEBOUNCE_MS = 50
@@ -33,8 +34,8 @@ DEFAULT_LONG_PRESS_DURATION = 2.0
 class UserButton:
     """User button via I2C register polling over Arduino Bridge.
 
-    The underlying register (0x0C) is *event-based*, not level-based:
-    the co-processor writes 0x01 once on press and 0x02 once on release.
+    The underlying register (0x0C) is *level-based*:
+    the co-processor writes 0x01 on press and 0x00 on release.
     This class tracks state internally so ``is_pressed()`` works as expected.
     """
 
@@ -224,12 +225,12 @@ class UserButton:
         """Process a register value change.
 
         Args:
-            signal: Register value (``0x01`` = press, ``0x02`` = release).
-                    Release is guarded against stale ``0x02`` at startup.
+            signal: Register value (``0x01`` = press, ``0x00`` or ``0x02`` = release).
+                    Release is guarded against stale value at startup.
         """
         if signal == USR_KEY_PTT_START:
             self._on_press_event()
-        elif signal == USR_KEY_PTT_STOP:
+        elif signal in USR_KEY_RELEASE_STATES:
             if self.pressed:
                 self._on_release_event()
 
