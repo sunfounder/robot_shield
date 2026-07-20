@@ -5,7 +5,7 @@ Provides hardware abstraction for the SunFounder Robot Shield:
 - ``Servo``      — angle control (-90° to +90°) with offset calibration
 - ``PWM``        — raw PWM frequency/pulse control (12 channels)
 - ``Motor``      — DC motor control (-100% to +100% power, 4 channels)
-- ``Battery``    — battery voltage, percentage, and status via I2C registers
+- ``Battery``    — battery voltage, percentage, and status via Bridge RPC
 - ``UserButton`` — USR button press/release detection with callbacks
 - ``I2C``        — low-level I2C bus read/write via Arduino Bridge RPC
 - ``setup_audio_output`` — configure Qualcomm Codec ALSA mixer for playback

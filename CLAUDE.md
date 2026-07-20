@@ -23,7 +23,7 @@ Exported from `robot_shield/__init__.py`:
 | `Servo` | `servo.py` | Angle control (-90°~90°), offset calibration, custom ranges |
 | `PWM` | `pwm.py` | Raw PWM — frequency, pulse width, duty cycle, enable (12 channels) |
 | `Motor` | `motor.py` | DC motor — power (-100~100), forward/reverse/brake, 4 channels |
-| `Battery` | `battery.py` | Voltage, capacity, status via I2C registers |
+| `Battery` | `battery.py` | Voltage, capacity, status via Bridge RPC |
 | `UserButton` | `user_button.py` | USR button polling with 6 callback types |
 | `I2C` | `i2c.py` | Low-level register read/write via Bridge RPC |
 | `setup_audio_output` | `audio.py` | Qualcomm Codec ALSA mixer config |
@@ -81,20 +81,20 @@ Motor frequency is fixed at 100Hz (10000μs period) in sketch `motor_control.cpp
 
 Servo PAN = PWM0, Servo TILT = PWM1.
 
-### Battery reads I2C directly (not Bridge servo/motor calls)
+### Battery reads via Bridge ``get_bat_volt`` / ``get_bat_percent`` / ``get_bat_status``
 
 ```python
 bat = Battery()
-bat.voltage    # reads REG_BAT_VOLT (0x20), unit 0.1V → returns float
-bat.capacity   # reads REG_BAT_PERCENT (0x21)
-bat.status     # reads REG_BAT_STATUS (0x22) → "Normal" / "Low Voltage" / etc.
+bat.voltage    # Bridge.call("get_bat_volt"), unit 0.1V → returns float
+bat.capacity   # Bridge.call("get_bat_percent")
+bat.status     # Bridge.call("get_bat_status") → "Normal" / "Charging" / "Full" / "Low"
 ```
 
-### UserButton polls register 0x0C at 100ms
+### UserButton polls via Bridge ``usr_btn_read``
 
 Signal values:
-- `0x01` — press (PTT start)
-- `0x02` — release (PTT stop)
+- `0x01` — press
+- `0x00` — release
 
 Uses a generation counter to prevent stale long-press timers. Six callback types: `on_press`, `on_release`, `on_click`, `on_press_released(bool)`, `on_long_press(duration=2.0)`, `on_long_press_released(duration=2.0)`.
 
@@ -122,5 +122,5 @@ All examples require the container to be running (they depend on `Bridge`).
 
 - Getter/setter combo pattern: `angle(45)` sets, `angle()` gets — same method, arity check
 - Registry-style classes: `Servo(0)` and `Servo(1)` create independent instances but share the same I2C bus
-- All Bridge calls go through `I2C` methods, never call `Bridge.call()` directly outside `i2c.py`
+- `Battery` and `UserButton` call `Bridge.call()` directly — no `I2C` intermediary needed for upstream Bridge functions.
 - Public classes log to `logging.getLogger(__name__)`; no `print()` in library code

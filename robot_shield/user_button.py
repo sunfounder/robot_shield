@@ -1,8 +1,7 @@
-"""User button via I2C register polling (Arduino Bridge).
+"""User button via Arduino Bridge ``usr_btn_read`` RPC.
 
-The USR button is read from the co-processor at I2C address 0x20 via
-register ``REG_USR_KEY_SIGNAL`` (0x0C). Values are level-based:
-0x01 = pressed, 0x00 = released.
+The USR button is read from the co-processor via the dedicated Bridge
+function. Values are level-based: 0x01 = pressed, 0x00 = released.
 
 Example::
 
@@ -19,12 +18,9 @@ import threading
 import warnings
 from typing import Callable, Optional
 
-from .i2c import I2C
-from .reg_map import REG_USR_KEY_SIGNAL
+from arduino.app_utils import Bridge
 
-USR_KEY_PTT_START = 0x01
-USR_KEY_PTT_STOP = 0x02
-USR_KEY_RELEASE_STATES = (0x00, 0x02)  # firmware may use 0x00 or 0x02 for release
+from .reg_map import USR_KEY_PRESSED, USR_KEY_RELEASED
 
 DEFAULT_POLL_INTERVAL = 0.05
 DEBOUNCE_MS = 50
@@ -32,18 +28,18 @@ DEFAULT_LONG_PRESS_DURATION = 2.0
 
 
 class UserButton:
-    """User button via I2C register polling over Arduino Bridge.
+    """User button via Arduino Bridge ``usr_btn_read`` RPC.
 
-    The underlying register (0x0C) is *level-based*:
-    the co-processor writes 0x01 on press and 0x00 on release.
+    The underlying Bridge function returns level-based values:
+    0x01 on press and 0x00 on release.
     This class tracks state internally so ``is_pressed()`` works as expected.
     """
 
     def __init__(self) -> None:
         """Initialize the button and start background polling.
 
-        Sets up callback slots and launches a daemon poll thread that reads
-        ``REG_USR_KEY_SIGNAL`` at 100 ms intervals.
+        Sets up callback slots and launches a daemon poll thread that calls
+        ``usr_btn_read`` at 50 ms intervals.
         """
         self.pressed = False
         self.pressed_for = 0.0
@@ -201,13 +197,7 @@ class UserButton:
         self._thread.start()
 
     def _poll_loop(self) -> None:
-        """Poll REG_USR_KEY_SIGNAL at ``DEFAULT_POLL_INTERVAL`` for press/release events.
-
-        Captures the initial register value to avoid firing on stale data at startup.
-
-        Returns:
-            None
-        """
+        """Poll ``usr_btn_read`` at ``DEFAULT_POLL_INTERVAL`` for press/release events."""
         prev = self._read_reg()
         while self._running:
             try:
@@ -225,12 +215,11 @@ class UserButton:
         """Process a register value change.
 
         Args:
-            signal: Register value (``0x01`` = press, ``0x00`` or ``0x02`` = release).
-                    Release is guarded against stale value at startup.
+            signal: Register value (``0x01`` = press, ``0x00`` = release).
         """
-        if signal == USR_KEY_PTT_START:
+        if signal == USR_KEY_PRESSED:
             self._on_press_event()
-        elif signal in USR_KEY_RELEASE_STATES:
+        elif signal == USR_KEY_RELEASED:
             if self.pressed:
                 self._on_release_event()
 
@@ -281,23 +270,14 @@ class UserButton:
             self._long_press_triggered = True
             self._safe_call(self._on_long_press)
 
-    _i2c: I2C | None = None
-
-    @classmethod
-    def _get_i2c(cls) -> I2C:
-        """Get or create the shared I2C instance."""
-        if cls._i2c is None:
-            cls._i2c = I2C()
-        return cls._i2c
-
     def _read_reg(self):
-        """Read REG_USR_KEY_SIGNAL via I2C.
+        """Read USR button state via Bridge ``usr_btn_read``.
 
         Returns:
-            int or None: Register value, or ``None`` if the read fails.
+            int or None: 0x01 = pressed, 0x00 = released, or ``None`` on failure.
         """
         try:
-            return self._get_i2c().read_byte_data(REG_USR_KEY_SIGNAL)
+            return Bridge.call("usr_btn_read", "")
         except Exception:
             return None
 

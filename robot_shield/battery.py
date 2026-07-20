@@ -1,6 +1,4 @@
-"""Battery status reader via I2C registers (Arduino Bridge).
-
-Register addresses are imported from :mod:`.reg_map`.
+"""Battery status reader via Arduino Bridge RPC.
 
 Example::
 
@@ -16,13 +14,7 @@ Example::
     Normal
 """
 
-import logging
-from typing import ClassVar, Optional
-
-from .i2c import I2C
-from .reg_map import REG_BAT_VOLT, REG_BAT_PERCENT, REG_BAT_STATUS
-
-logger = logging.getLogger(__name__)
+from arduino.app_utils import Bridge
 
 _STATUS_MAP = {
     0: "Normal",
@@ -36,34 +28,24 @@ MANUFACTURER = "SunFounder"
 
 
 class Battery:
-    """Battery status reader via I2C registers over Arduino Bridge."""
+    """Battery status reader via Arduino Bridge RPC.
 
-    _i2c: ClassVar[Optional[I2C]] = None
+    Uses the upstream Bridge functions ``get_bat_volt``, ``get_bat_percent``,
+    and ``get_bat_status`` instead of raw I2C register reads.
+    """
 
-    @classmethod
-    def _get_i2c(cls) -> I2C:
-        """Get or create the shared I2C instance."""
-        if cls._i2c is None:
-            cls._i2c = I2C()
-        return cls._i2c
+    @staticmethod
+    def _bridge_call(func: str) -> int:
+        """Call a Bridge battery function, returning 0 on failure."""
+        try:
+            return Bridge.call(func, "")
+        except Exception:
+            return 0
 
     @property
     def present(self) -> bool:
-        """Check if battery is present (voltage > 0).
-
-        Returns:
-            bool: ``True`` if battery voltage reads above zero.
-        """
-        return self._read_reg(REG_BAT_VOLT) > 0
-
-    @property
-    def online(self) -> bool:
-        """Check if battery is online — True when I2C is reachable.
-
-        Returns:
-            bool: ``True`` if the I2C device responds.
-        """
-        return self._get_i2c().is_ready()
+        """Check if battery is present (voltage > 0)."""
+        return self._bridge_call("get_bat_volt") > 0
 
     @property
     def status(self) -> str:
@@ -73,7 +55,7 @@ class Battery:
             str: One of "Normal", "Charging", "Full", "Low",
                  or "Unknown(N)" for unrecognised codes.
         """
-        raw = self._read_reg(REG_BAT_STATUS)
+        raw = self._bridge_call("get_bat_status")
         return _STATUS_MAP.get(raw, f"Unknown({raw})")
 
     @property
@@ -81,31 +63,22 @@ class Battery:
         """Get raw battery status register value.
 
         Returns:
-            int: Status register value (0=Normal, 1=Charging,
-                 2=Full, 3=Low).
+            int: 0=Normal, 1=Charging, 2=Full, 3=Low.
         """
-        return self._read_reg(REG_BAT_STATUS)
+        return self._bridge_call("get_bat_status")
 
     @property
     def capacity(self) -> int:
-        """Get battery charge percentage.
-
-        Returns:
-            int: Charge percentage (0–100).
-        """
-        return self._read_reg(REG_BAT_PERCENT)
+        """Get battery charge percentage (0–100)."""
+        return self._bridge_call("get_bat_percent")
 
     @property
     def voltage(self) -> float:
         """Get battery voltage in volts.
 
-        The register stores voltage in units of 0.1 V; this property
-        converts to volts and rounds to 1 decimal place.
-
-        Returns:
-            float: Battery voltage in volts.
+        The co-processor reports in 0.1 V units (e.g. 74 → 7.4V).
         """
-        raw = self._read_reg(REG_BAT_VOLT)
+        raw = self._bridge_call("get_bat_volt")
         return round(raw / 10.0, 1)
 
     @property
@@ -134,21 +107,6 @@ class Battery:
             bool: ``True`` if battery status is Normal (0).
         """
         return self.raw_status == 0
-
-    def _read_reg(self, addr: int) -> int:
-        """Read a single register via I2C, returning 0 on failure.
-
-        Args:
-            addr: Register address to read.
-
-        Returns:
-            int: Register value, or 0 if the read fails.
-        """
-        try:
-            return self._get_i2c().read_byte_data(addr)
-        except Exception as e:
-            logger.error("read_reg(0x%02X) failed: %s", addr, e)
-            return 0
 
     def __str__(self) -> str:
         """Return a human-readable battery summary string.

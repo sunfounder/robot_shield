@@ -13,8 +13,8 @@ def on_release():
 
 
 def main():
-    # Observer pattern: register callbacks, the library polls I2C in a
-    # background thread and invokes the right callback on each button event.
+    # Observer pattern: register callbacks, the library polls via Bridge RPC
+    # in a background thread and invokes the right callback on each button event.
     btn = UserButton()
     btn.set_on_press(on_press)
     btn.set_on_release(on_release)

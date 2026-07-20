@@ -23,26 +23,26 @@ Signal values::
 
 REG_CHIP_ID          = 0x00   # Chip identification code
 REG_I2C_ADDR         = 0x01   # I2C address configuration
-REG_IO_VOLT          = 0x02   # IO voltage setting
-REG_IOREF_VOLT       = 0x03   # IOREF voltage readout
+REG_IO_VOLT          = 0x02   # IO voltage setting (0 = Auto)
+REG_IOREF_VOLT       = 0x03   # IOREF voltage readout (mV)
 REG_FW_VER_MAJOR     = 0x04   # Firmware version — major
 REG_FW_VER_MINOR     = 0x05   # Firmware version — minor
 REG_FW_VER_PATCH     = 0x06   # Firmware version — patch
 REG_POWER_SWITCH     = 0x07   # Power switch control
-REG_AUTO_SHUTDOWN    = 0x08   # Auto-shutdown configuration
-REG_SYS_CTRL         = 0x09   # System control
-REG_SHUTDOWN_SIGNAL  = 0x0A   # Write to trigger PWR shutdown
+REG_AUTO_SHUTDOWN    = 0x08   # Auto-shutdown configuration (project-specific)
+REG_SYS_CTRL         = 0x09   # System control (bit7=soft reset, bit6=servo all-centre, bit5=enter IAP)
+REG_SHUTDOWN_SIGNAL  = 0x0A   # Write 0x01 to trigger PWR long-press shutdown
 REG_KEY_SIGNAL       = 0x0B   # PWR button event
-REG_USR_KEY_SIGNAL   = 0x0C   # USR button event
+REG_USR_KEY_SIGNAL   = 0x0C   # USR button event (bit0: 0=released, 1=pressed)
 
 # ===========================================================================
 #  Battery / power registers (0x20–0x23)
 # ===========================================================================
 
-REG_BAT_VOLT         = 0x20   # Battery voltage (unit: 0.1 V)
+REG_BAT_VOLT         = 0x20   # Battery voltage (mV, single byte — max 255 mV raw)
 REG_BAT_PERCENT      = 0x21   # Battery charge percentage (0–100)
-REG_BAT_STATUS       = 0x22   # Battery status flags
-REG_ARDUINO_CURRENT  = 0x23   # Arduino board current draw
+REG_BAT_STATUS       = 0x22   # Battery status (0=Normal, 1=Charging, 2=Full, 3=Low)
+REG_ARDUINO_CURRENT  = 0x23   # Arduino board current draw (deprecated, retained for compatibility)
 
 # ===========================================================================
 #  Raw ADC registers (0x25–0x2A) — 16-bit, little-endian
@@ -66,4 +66,24 @@ SHUTDOWN_TRIGGER_VAL  = 0x01   # Write to trigger PWR long-press shutdown
 KEY_SIGNAL_PRESSED    = 0x01   # Single click
 KEY_SIGNAL_ZERO_ENTER = 0x02   # Double click — enter zero mode
 KEY_SIGNAL_ZERO_EXIT  = 0x03   # Double click — exit zero mode
+
+# REG_USR_KEY_SIGNAL (0x0C) — USR button events (bit0 level)
+USR_KEY_RELEASED      = 0x00   # Button released (bit0 = 0)
+USR_KEY_PRESSED       = 0x01   # Button pressed  (bit0 = 1)
+
+# ===========================================================================
+#  Power-on default values (mirrors sketch/reg_map.h)
+# ===========================================================================
+
+CHIP_ID_VALUE         = 0x01   # Default chip ID
+I2C_ADDR_VALUE        = 0x20   # Default I2C address
+IO_VOLT_VALUE         = 0x00   # IO voltage default (0 = Auto)
+POWER_SWITCH_VALUE    = 0xC1   # Power switch default
+SYS_CTRL_VALUE        = 0x00   # System control default
+
+# PWM defaults
+PWM_PERIOD_L_VALUE    = 0x20   # PWM default period low byte (0x4E20 = 20000 us)
+PWM_PERIOD_H_VALUE    = 0x4E   # PWM default period high byte
+PWM_PULSE_L_VALUE     = 0x00   # PWM default pulse low byte
+PWM_PULSE_H_VALUE     = 0x00   # PWM default pulse high byte
 
