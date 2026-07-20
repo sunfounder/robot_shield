@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 _STATUS_MAP = {
     0: "Normal",
-    1: "Low Voltage",
-    2: "Over Voltage",
-    3: "Over Current",
+    1: "Charging",
+    2: "Full",
+    3: "Low",
 }
 
 MODEL_NAME = "Robot Shield"
@@ -70,7 +70,7 @@ class Battery:
         """Get battery health status.
 
         Returns:
-            str: One of "Normal", "Low Voltage", "Over Voltage", "Over Current",
+            str: One of "Normal", "Charging", "Full", "Low",
                  or "Unknown(N)" for unrecognised codes.
         """
         raw = self._read_reg(REG_BAT_STATUS)
@@ -81,8 +81,8 @@ class Battery:
         """Get raw battery status register value.
 
         Returns:
-            int: Status register value (0=Normal, 1=Low Voltage,
-                 2=Over Voltage, 3=Over Current).
+            int: Status register value (0=Normal, 1=Charging,
+                 2=Full, 3=Low).
         """
         return self._read_reg(REG_BAT_STATUS)
 
