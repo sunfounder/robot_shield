@@ -12,12 +12,9 @@ from robot_shield import Battery
 def main():
     battery = Battery()
 
-    print(f"Battery online: {battery.online}")
-    if not battery.online:
-        print("WARNING: Battery is not reachable via I2C. Check Bridge connection.")
-        exit(1)
-
     print(f"Battery present: {battery.present}")
+    if not battery.present:
+        print("WARNING: Battery is not detected. Check power connection.")
 
     print("\n--- Battery Status ---")
     print(f"  Model:        {battery.model_name}")
